@@ -1,0 +1,45 @@
+name: Fetch APK and Decode
+
+on:
+  workflow_dispatch:
+
+jobs:
+  decode:
+    runs-on: ubuntu-latest
+
+    steps:
+    # 1️⃣ Checkout repo
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    # 2️⃣ Setup Java (required for apktool)
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: temurin
+        java-version: 17
+
+    # 3️⃣ Install required tools
+    - name: Install tools
+      run: |
+        sudo apt update
+        sudo apt install -y apktool python3-pip unzip
+
+    # 4️⃣ Download APK from Google Drive (SAFE METHOD)
+    - name: Download APK from Google Drive
+      run: |
+        pip install gdown
+        mkdir -p apk
+        gdown --id 1RpbZZkhPcgapFCzbtHCeMrhNJ5NuY0AY -O apk/app.apk
+
+    # 5️⃣ Decode APK
+    - name: Decode APK
+      run: |
+        apktool d apk/app.apk -o decoded --force
+
+    # 6️⃣ Upload decoded files as artifact
+    - name: Upload decoded output
+      uses: actions/upload-artifact@v4
+      with:
+        name: decoded-apk
+        path: decoded
