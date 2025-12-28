@@ -1,0 +1,47 @@
+name: Fetch APK from Google Drive and Decode
+
+on:
+  workflow_dispatch:
+
+jobs:
+  decode:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: temurin
+        java-version: 17
+
+    - name: Install apktool and wget
+      run: |
+        sudo apt update
+        sudo apt install -y apktool wget unzip
+
+    - name: Download APK from Google Drive
+      run: |
+        FILE_ID=1RpbZZkhPcgapFCzbtHCeMrhNJ5NuY0AY
+
+        wget --quiet --save-cookies cookies.txt --keep-session-cookies \
+          "https://docs.google.com/uc?export=download&id=$FILE_ID" -O app.apk || true
+
+        wget --load-cookies cookies.txt \
+          "https://docs.google.com/uc?export=download&confirm=$(awk '/download/ {print $NF}' cookies.txt)&id=$FILE_ID" \
+          -O app.apk
+
+        mkdir -p apk
+        mv app.apk apk/app.apk
+
+    - name: Decode APK
+      run: |
+        apktool d apk/app.apk -o decoded --force
+
+    - name: Upload decoded output
+      uses: actions/upload-artifact@v4
+      with:
+        name: decoded-apk
+        path: decoded
